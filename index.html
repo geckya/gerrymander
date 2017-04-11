@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Gerrymandering Demo</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.3/jquery.min.js"></script>
+<!-- <script src="jquery.min.js"></script> -->
+<script src="/static/gerry.js"></script>
+<link rel="stylesheet" type="text/css" href="/static/style.css">
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+<!-- <link rel="stylesheet" href="bootstrap.min.css"> -->
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+<!-- <link rel="stylesheet" href="bootstrap-theme.min.css"> -->
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+<!-- <script src="bootstrap.min.js"></script> -->
+</head>
+
+<body>
+
+<!-- overall layout -->
+<div class="container">
+    <!-- alerts -->
+    <div class="row" id="alertrow">
+        <noscript>
+            <div class="alert alert-danger text-centered" role="alert">
+                <strong>This site uses JavaScript.</strong> Please enable it or switch to a browser with Javascript support.
+            </div>
+        </noscript>
+    </div>
+    <!-- top banner -->
+    <div class="row" id="bannerrow">
+        <div class="col-xs-12">
+            <img class="banner" src="/static/gerrymander_website_banner_faint.jpg"></img>
+            <div class="alert alert-danger text-centered" role="alert">
+                <strong>This site is in beta testing. Please direct comments to <a href="mailto:markat@princeton.edu">markat@princeton.edu</a> or <a href="mailto:sswang@princeton.edu">sswang@princeton.edu</a>.</strong>
+            </div>
+            <div id="intro">
+                <p>
+                <a href="http://thelawdictionary.org/gerrymander/" title="GERRYMANDER in Black's Law Dictionary">Gerrymandering</a> is the drawing of political districts to gain advantage beyond what would accrue by natural patterns of population. Gerrymandering can benefit an individual legislator or a whole political party. This site is principally concerned with partisan gerrymandering, the establishment of an overall advantage across an entire state.
+                </p>
+                <p>
+                Partisan gerrymandering is considered justiciable by the United States Supreme Court, but a nationwide standard has not been established. Below are online calculators for simple statistical tests described in <a href="https://www.stanfordlawreview.org/print/article/three-tests-for-practical-evaluation-of-partisan-gerrymandering/">"Three Tests for Practical Evaluation of Partisan Gerrymandering,"</a> by Samuel S.-H. Wang, 68 Stanford Law Review 1263 (2016). This approach was awarded a prize in Common Cause's 2016 First Amendment Gerrymander Standard Writing Competition.
+                </p>
+            </div>
+        </div>
+    </div> <!-- /.row -->
+
+    <!-- main content -->
+    <div class="row" id="contentrow">
+        <!-- links -->
+        <div class="col-xs-2 sidebar" id="sidebar">
+            <h3>Links</h3>
+            <ul>
+                <li><a href="http://election.princeton.edu/2016/06/26/an-online-app-to-diagnose-partisan-gerrymandering/">A brief explanation of the approach</a></li>
+                <li><a href="https://www.stanfordlawreview.org/print/article/three-tests-for-practical-evaluation-of-partisan-gerrymandering/">Three Tests for Practical Evaluation of Partisan Gerrymandering</a>, Stanford Law Review, 2016</li>
+                <li><a href="/static/Wang_CommonCause_contest_entry_March2016.pdf">Applying the three standards to Wisconsin (Whitford v. Nichol) and Maryland (Shapiro v. McManus).</a> Prize-winning entry in <a href="http://www.commoncause.org/issues/voting-and-elections/redistricting/first-amendment-gerrymander-standard-writing-competition.html">the 2016 Common Cause gerrymandering-standard contest.</a></li>
+                <li>NYT: <a href="http://www.nytimes.com/2013/02/03/opinion/sunday/the-great-gerrymander-of-2012.html?pagewanted=all">The Great Gerrymander of 2012</a>, February 3, 2013</li>
+                <li>NYT: <a href="http://www.nytimes.com/2015/12/06/opinion/sunday/let-math-save-our-democracy.html">Let Math Save Our Democracy</a>, December 6, 2015</li>
+                <li>Supreme Court brief, <a href="https://web.math.princeton.edu/~sswang/14-232_bsac_SamWang.pdf">Harris v. Arizona Independent Redistricting Commission</a></li>
+                <li><a href="https://www.jstor.org/stable/143520">Gudgin and Taylor</a> (1982). <a href="http://press.ecpr.eu/documents/content/9781907301353.pdf">Seats, votes, and the spatial organisation of elections</a>.</li>
+                <li>David Lane's <a href="http://onlinestatbook.com/">online book</a> on introductory statistics</li>
+                <li><a href="https://github.com/SamWangPhD/gerrymandering">MATLAB code for the three tests</a></li>
+                <li><a href="http://election.princeton.edu">Princeton Election Consortium</a></li>
+                <li><a href="mailto:sswang@princeton.edu">Contact Sam Wang</a></li>
+            </ul>
+
+        </div> <!-- /.col-xs-2 -->
+
+        <!-- inputs -->
+        <div class="col-xs-4" id="inputs">
+            <h3>Input</h3>
+            <h4>Step 1: Pick a data set</h4>
+            <form role="form" name="form">
+                <div class="indent" id="step1">
+                    <p>
+                    Select a state and year, upload a file, or enter data manually.
+                    </p>
+                    <div class="form-group" id="option1">
+                        <label for="input_state_year">
+                            <input type="radio" name="input_type" id="input_state_year" value="1">
+                            <span>Option 1 (U.S. House): Pick a state and year</span>
+                        </label>
+                        <div class="form-inline indent">
+                            <div class="form-group">
+                                <label for="state">State:</label>
+                                <select class="form-control" id="state" onfocus="check('input_state_year')">
+                                    <option value="AL">Alabama</option>
+                                    <!-- <option value="AK">Alaska</option> -->
+                                    <option value="AZ">Arizona</option>
+                                    <option value="AR">Arkansas</option>
+                                    <option value="CA">California</option>
+                                    <option value="CO">Colorado</option>
+                                    <option value="CT">Connecticut</option>
+                                    <!-- <option value="DE">Delaware</option> -->
+                                    <option value="FL">Florida</option>
+                                    <option value="GA">Georgia</option>
+                                    <option value="HI">Hawaii</option>
+                                    <option value="ID">Idaho</option>
+                                    <option value="IL">Illinois</option>
+                                    <option value="IN">Indiana</option>
+                                    <option value="IA">Iowa</option>
+                                    <option value="KS">Kansas</option>
+                                    <option value="KY">Kentucky</option>
+                                    <option value="LA">Louisiana</option>
+                                    <option value="ME">Maine</option>
+                                    <option value="MD">Maryland</option>
+                                    <option value="MA">Massachusetts</option>
+                                    <option value="MI">Michigan</option>
+                                    <option value="MN">Minnesota</option>
+                                    <option value="MS">Mississippi</option>
+                                    <option value="MO">Missouri</option>
+                                    <option value="MT">Montana</option>
+                                    <option value="NE">Nebraska</option>
+                                    <option value="NV">Nevada</option>
+                                    <option value="NH">New Hampshire</option>
+                                    <option value="NJ">New Jersey</option>
+                                    <option value="NM">New Mexico</option>
+                                    <option value="NY">New York</option>
+                                    <option value="NC">North Carolina</option>
+                                    <option value="ND">North Dakota</option>
+                                    <option value="OH">Ohio</option>
+                                    <option value="OK">Oklahoma</option>
+                                    <option value="OR">Oregon</option>
+                                    <option value="PA">Pennsylvania</option>
+                                    <option value="RI">Rhode Island</option>
+                                    <option value="SC">South Carolina</option>
+                                    <option value="SD">South Dakota</option>
+                                    <option value="TN">Tennessee</option>
+                                    <option value="TX">Texas</option>
+                                    <option value="UT">Utah</option>
+                                    <option value="VT">Vermont</option>
+                                    <option value="VA">Virginia</option>
+                                    <option value="WA">Washington</option>
+                                    <option value="WV">West Virginia</option>
+                                    <option value="WI">Wisconsin</option>
+                                    <!-- <option value="WY">Wyoming</option> -->
+                                </select>
+                            </div> <!-- form-group -->
+                            <div class="form-group">
+                                <label for="year">Year (1898-2014):</label>
+                                <input type="number" class="form-control" min="1898" max="2014" size="4" step="2" value="2014" id="year" onfocus="check('input_state_year')">
+                            </div>
+                        </div> <!-- form-inline -->
+                    </div> <!-- option1 -->
+
+                    <div class="form-group" id="option2"> 
+                        <label for="input_upload">
+                            <input type="radio" name="input_type" id="input_upload" value="2">
+                            <span>Option 2: Upload from a CSV file (click <a href="/static/sample.csv" title="Click to download example">here</a> for an example)</span>
+                        </label>
+                        <div class="indent">
+                            <div class="form-group">
+                                <label for="opt2_state_label">Enter name of race (i.e. Arizona State Senate):</label>
+                                <input type="text" class="form-control" id="opt2_state_label" onfocus="check('input_upload')">
+                            </div>
+
+                            <p>Data should be one district per row.</p>
+                            <input class="csvInput" id="upload" type="file" onchange="getFromFile()" onfocus="check('input_upload')">
+                            <p>One number per row will be interpreted as Democratic two-party vote share (%). Two numbers per row (separated by commas) will be taken as D and R vote share, rescaling to add up to 100% if necessary.</p>
+                        </div>
+                    </div>
+
+                    <!-- <div class="form&#45;group" id="url_div" style="display:none"> -->
+                    <!--     <label>or fetch from a URL:</label> -->
+                    <!--     <div class="input&#45;group"> -->
+                    <!--         <input class="form&#45;control csvInput" id="url" type="url" oninput="urlChange()"> -->
+                    <!--         <span class="input&#45;group&#45;btn"> -->
+                    <!--             <button class="csvButton btn btn&#45;default" type="button" id="useURL" onclick="getFromURL()">Use this URL</button> -->
+                    <!--         </span> -->
+                    <!--     </div><!&#45;&#45; /input&#45;group &#45;&#45;> -->
+                    <!-- </div> -->
+
+                    <div class="form-group" id="option3">
+                        <label for="input_manual">
+                            <input type="radio" name="input_type" id="input_manual" value="3">
+                            <span>Option 3: Enter data manually</span>
+                        </label>
+                        <div class="indent">
+                            <div class="form-group">
+                                <label for="opt3_state_label">Enter name of race (i.e. Arizona State Senate):</label>
+                                <input type="text" class="form-control" id="opt3_state_label" onfocus="check('input_manual')">
+                            </div>
+                            <p>Use the same rule as Option 2.</p>
+                            <div id="wrapper">
+                                <table>
+                                    <tr class="text-centered">
+                                        <td>Democratic</td>
+                                        <td>Republican</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <textarea class="csvEntry form-control" id="csvdata1" rows=10 onfocus="check('input_manual')"></textarea>
+                                        </td>
+                                        <td>
+                                            <textarea class="csvEntry form-control" id="csvdata2" rows=10 onfocus="check('input_manual')"></textarea>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <p class="help-block">Press Tab to move between columns</p>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- Step 1 -->
+                <h4>Step 2: Uncontested races</h4>
+                <div class="indent" id="step2">
+                    <div class="form-group">
+                        <label>For uncontested races, assume winning vote percentage in those districts would have been:</label>
+                        <div class="form-inline">
+                            <label class="radio-inline">
+                                <input type="radio" name="unc" value="75" id="unc75" checked>75
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="unc" value="80" id="unc80">80
+                            </label>
+                            <label class="radio-inline" for="uncother">
+                                <input type="radio" name="unc" value="other" id="uncother" style="margin-top:0px; height:100%">
+                                <div class="input-group">
+                                    <span class="input-group-addon">
+                                        Other (51-100):
+                                    </span>
+                                    <input type="number" min="51" max="100" size="3" class="form-control input-sm" id="uncotherbox" onfocus="check('uncother')" value="100">
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div> <!-- Step 2 -->
+                <h4>Step 3: Fantasy delegation parameters</h4>
+                <div class="indent">
+                    <!-- <div class="form&#45;group"> -->
+                    <!--     <label>For the analysis of the effects of districting:</label> -->
+                    <!--     <p>This app will perform 1,000,000 simulations to test the range of delegations that arises naturally from national population patterns.</p> -->
+                    <!--     <div class="radio"> -->
+                    <!--         <label> -->
+                    <!--             <input type="radio" name="step3" value="same" id="usehouse" checked> -->
+                    <!--             Use U.S. House results for same year (includes population clustering effects) -->
+                    <!--         </label> -->
+                    <!--     </div> -->
+                    <!--     <div class="radio"> -->
+                    <!--         <label> -->
+                    <!--             <input type="radio" name="step3" value="none"> -->
+                    <!--             Compare with a non&#45;clustered baseline -->
+                    <!--         </label> -->
+                    <!--     </div> -->
+                    <!-- </div> -->
+
+                    <div class="form-group"> 
+                        <label for="use_house">
+                            <!-- <input type="radio" name="step3opt" id="use_house" value="house"> -->
+                            <span>Use U.S. House data:</span>
+                        </label>
+                        <div class="form-inline indent">
+                            <div class="form-group">
+                                <label for="step3year">
+                            <input type="radio" name="step3opt" id="use_house" value="house">
+                                    Year (1898-2014):
+                                </label>
+                                <input type="number" class="form-control" min="1898" max="2014" size="4" step="2" value="2014" id="step3year" onfocus="check('use_house')">
+                            </div>
+                            <div class="form-group indent">
+                                <label for="use_house">States to use:</label>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="radio" name="states_to_use" id="all_states" value="all" onclick="check('use_house')">
+                                        <span>Use all states</span>
+                                    </label>
+
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="radio" name="states_to_use" id="omit_selected" value="omit" onclick="check('use_house')">
+                                            <span>Omit selected states:</span>
+                                        </label>
+                                        <select multiple class="form-control" id="step3states" onfocus="check('omit_selected')">
+                                            <option value="AL">Alabama</option>
+                                            <option value="AK">Alaska</option>
+                                            <option value="AZ">Arizona</option>
+                                            <option value="AR">Arkansas</option>
+                                            <option value="CA">California</option>
+                                            <option value="CO">Colorado</option>
+                                            <option value="CT">Connecticut</option>
+                                            <option value="DE">Delaware</option>
+                                            <option value="FL">Florida</option>
+                                            <option value="GA">Georgia</option>
+                                            <option value="HI">Hawaii</option>
+                                            <option value="ID">Idaho</option>
+                                            <option value="IL">Illinois</option>
+                                            <option value="IN">Indiana</option>
+                                            <option value="IA">Iowa</option>
+                                            <option value="KS">Kansas</option>
+                                            <option value="KY">Kentucky</option>
+                                            <option value="LA">Louisiana</option>
+                                            <option value="ME">Maine</option>
+                                            <option value="MD">Maryland</option>
+                                            <option value="MA">Massachusetts</option>
+                                            <option value="MI">Michigan</option>
+                                            <option value="MN">Minnesota</option>
+                                            <option value="MS">Mississippi</option>
+                                            <option value="MO">Missouri</option>
+                                            <option value="MT">Montana</option>
+                                            <option value="NE">Nebraska</option>
+                                            <option value="NV">Nevada</option>
+                                            <option value="NH">New Hampshire</option>
+                                            <option value="NJ">New Jersey</option>
+                                            <option value="NM">New Mexico</option>
+                                            <option value="NY">New York</option>
+                                            <option value="NC">North Carolina</option>
+                                            <option value="ND">North Dakota</option>
+                                            <option value="OH">Ohio</option>
+                                            <option value="OK">Oklahoma</option>
+                                            <option value="OR">Oregon</option>
+                                            <option value="PA">Pennsylvania</option>
+                                            <option value="RI">Rhode Island</option>
+                                            <option value="SC">South Carolina</option>
+                                            <option value="SD">South Dakota</option>
+                                            <option value="TN">Tennessee</option>
+                                            <option value="TX">Texas</option>
+                                            <option value="UT">Utah</option>
+                                            <option value="VT">Vermont</option>
+                                            <option value="VA">Virginia</option>
+                                            <option value="WA">Washington</option>
+                                            <option value="WV">West Virginia</option>
+                                            <option value="WI">Wisconsin</option>
+                                            <option value="WY">Wyoming</option>
+                                        </select>
+                                    </div>
+                                </div> <!-- form-group -->
+                            </div>
+                        </div> <!-- form-inline -->
+                    </div>
+                    <div class="form-group"> 
+                        <label for="use_other">
+                            <!-- <input type="radio" name="step3opt" id="use_other" value="other"> -->
+                            <span>Use other data:</span>
+                        </label>
+                        <div class="form-inline indent">
+                            <label class="radio-inline">
+                            <input type="radio" name="step3opt" id="use_other" value="other">
+                                <!-- <input type="radio" name="other" value="generic" id="generic" onclick="check('use_other')"> -->
+                                Generic symmetric distribution
+(creates fantasy delegations with no population-clustering effect)
+                            </label>
+
+                        </div>
+                    </div>
+                </div> <!-- Step 3 -->
+                <!-- <h4>Step 4: Population clustering</h4> -->
+                <div class="form-group indent" style="display:none">
+                    <label class="radio-inline">
+                        <input type="checkbox" name="clustering" value="random" id="random" onclick="check('use_clustering')">Flip vote shares at random (creates fantasy delegations with no population-clustering effect)
+                    </label>
+
+                </div>
+                <h4 style="display:inline">Step 4:</h4>
+                <button class="btn btn-primary btn-md" type="button" id="submit">Calculate results!</button>
+                <button class="btn btn-primary btn-md" type="button" id="loading_file" disabled style="display:none;">Still loading file...</button>
+                <div class="indent">
+                    <p>Calculation may take up to 3 minutes.</p>
+                </div>
+            </form>
+        </div> <!-- /.col-xs-4 -->
+
+        <!-- results -->
+        <div class="col-xs-6" id="results">
+            <h3>Results <small id="pdf_link_span" style="display:none">(<a id="pdf_link" href="" target="_blank">View as PDF</a>)</small>
+            </h3>
+            <div class="" id="results_html">
+            </div>
+            <div style="text-align:center; display:none" id="results_loading">
+                <img src="/static/loading.gif" style="width:initial"></img>
+                <h4 id="status">Connecting</h4>
+            </div>
+        </div> <!-- /.col-xs-6 -->
+    </div> <!-- /.row -->
+    <!-- <div class="row footer" id="footerrow"> -->
+    <!--     <div class="col&#45;xs&#45;12 text&#45;centered"> -->
+    <!--         <i>Copyright © 2016 Sam Wang and Mark Tengi</i> -->
+    <!--     </div> -->
+    <!-- </div> <!&#45;&#45; /.row &#45;&#45;> -->
+</div> <!-- /.container -->
+</body>
+</html>

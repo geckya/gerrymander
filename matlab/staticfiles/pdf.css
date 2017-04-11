@@ -1,0 +1,10 @@
+img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 75%;
+}
+
+.banner {
+    margin-bottom: 1em;
+}

@@ -1,0 +1,23 @@
+README file for House_1898_2014_voteshares.csv
+
+This file contains House election results from 1898 to 2014. It is designed for use in conjunction with gerrymandering-detection tools developed by Sam Wang (gerrymander.princeton.edu).
+
+Data sources: public records compiled by Maxim Zaslavsky and Sam Wang. Results from 2014 were taken from data compiled by David Wasserman, Loren Fulton, and Ashton Barry at the Cook Political Report.
+
+For further inquiries, contact Sam Wang (sswang@princeton.edu).
+
+>>>
+
+"Year" gives the year of the election.
+
+"State" gives a numeric state code.
+
+"District" gives the Congressional district.
+
+"D_voteshare" gives the fraction of the two-party vote (Democrats plus Republicans) won by the Democratic candidate. Third-party candidates are not included.
+
+"Incumbent" indicates whether the winner was a re-elected incumbent. +1=Democrat, -1=Republican, 0=not an incumbent.
+
+"Winner" indicates the party affiliation of the winner. +1=Democrat, -1=Republican.
+
+"State_name" is the full name of the state.

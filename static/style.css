@@ -1,0 +1,50 @@
+.csvInput {
+    width: 250px;
+}
+
+.csvButton {
+    width: 125px;
+}
+
+.csvEntry {
+    width: 100px !important;
+    display: inline-block !important;
+}
+
+.sidebar {
+    list-style: none;
+}
+
+.banner {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 1em;
+    max-width: 100%;
+    min-width: 750px;
+}
+
+.footer {
+    margin-top: 2em;
+    margin-bottom: 1em;
+}
+
+.text-centered {
+    text-align: center;
+    width: 100%;
+}
+
+.justified {
+    text-align: justify;
+}
+
+.indent {
+    margin-left: 10px;
+}
+
+#results_html img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+}

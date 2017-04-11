@@ -1,0 +1,26 @@
+Code layout
+
+All the code lives under /home/web_code/ and the data (generated PDFs) lives in /home/web_data/. The MATLAB code is in /home/web_code/matlab/, and the server stuff is in /home/web_code/ws/.
+
+
+Running
+
+The server is running in a persistent tmux session so that it is not killed when an SSH connection dies. To attach to this tmux session, for instance to restart the server, anyone in the 'apache' group (including markat and sswang) can execute:
+tmux -S /tmp/gerry_shared attach -t gerry
+
+Once attached, you should see some basic logging.
+
+If the tmux process has somehow died, a shared session can be created with the following:
+tmux -S /tmp/gerry_shared new -s gerry "chgrp apache /tmp/gerry_shared; bash --init-file <(echo \". activate gerrymander; module load matlab\")"
+
+To run the server in this tmux session, cd to /home/web_data/ and execute:
+python -m SimpleHTTPServer &
+Then cd to matlab/ and execute:
+python ../ws/server.py
+
+To exit tmux without killing the process, press CTRL-b followed by d. This will leave tmux (and the server) running in the background and you can safely exit the SSH session.
+
+
+Updating
+
+The MATLAB code to be run can be updated simply by changing the files in /home/web_code/matlab/. There is no need to restart the server. However, the Python program which calls the gerrymander_tests.m passes the current set of arguments in the specified order. If the arguments are changed, /home/web_code/ws/gerryRunner.py must be modified. Also, this Python looks for specific filenames: <outputfilename>.html, <outputfilename>_{Test1, Test2a, Test2b, Test3}.jpg, and <outputfilename>_{Test1, Test2a, Test2b, Test3}_hires.jpg. If any additional files are produced or if these names change, the Python will have to be modified.

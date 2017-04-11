@@ -1,0 +1,339 @@
+function results=gerrymander_tests(year,states,yearbaseline,statebaseline,imputeduncontested,symm,state_label,outputfilename)
+
+% make double JPEGs, one high resolution
+
+% parameters
+%   year - Election year to be analyzed. If in [1898:2:2100], 'states' is state number
+%   states - State code. If year==0, then put an election data array here!
+%   yearbaseline - Election year to be resampled for simulation-based test;
+%       if it's zero, then 'statebaseline' should contain an array of
+%       election data
+%   statebaseline - States to be resampled. If yearbaseline==0, put election data here!
+%   imputeduncontested - User value for what to do about uncontested races
+%   symm - User option to use population symmetry as the ideal baseline
+%   state_label - A string to allow user to define state/race (i.e.
+%      'Arizona State Senate')
+%   outputfilename - The prefix of the output file names to be written
+
+% dummy parameters - comment out this line for actual use
+% example: gerrymander_tests(2012,38,2012,0,0.75,0,'Pennsylvania','foo');
+% year=2012;states=38;yearbaseline=2012;statebaseline=0;imputeduncontested=0.25;symm=0;state_label='Pennsylvania';outputfilename='foo';
+% example: gerrymander_tests(2014,20,2014,0,0.75,0,'Maryland','foo');
+% year=2012;states=20;yearbaseline=2012;statebaseline=0;imputeduncontested=0.25;symm=0;state_label='Maryland';outputfilename='foo';
+% year=2012;states=16;yearbaseline=1912;statebaseline=0;imputeduncontested=0.35;symm=0;state_label='Kansas';outputfilename='Kansas_bug_report';
+
+outputfilename_=outputfilename; symm_=symm;
+global parameterlisting stateresults nationalresults symm_ number_of_simulations outputfilename_ % this allows the program to be split across two scripts so a browser message can be displayed in between
+
+fprintf('%s Starting\n', datestr(now))
+starttime=datetime('now'); % comment this out when running on laptop
+electionmessage='Election to be analyzed: ';
+parameterlist0=sprintf('Parameters: year=%i ',year);
+if year==0
+    parameterlist1=sprintf('states=%.2f ',states(:,3));
+    parameterlist1=[parameterlist1 sprintf('yearbaseline=%i statebaseline=',yearbaseline)];
+else
+    parameterlist1=sprintf('Parameters: year=%i states=%i yearbaseline=%i statebaseline=',year,states,yearbaseline);
+end
+parameterlist2=sprintf('%i ',statebaseline);
+parameterlist3=sprintf('imputeduncontested=%.2f symm=%i statelabel=%s outputfilename=%s',imputeduncontested,symm,state_label,outputfilename);
+parameterlisting=[parameterlist0 parameterlist1 parameterlist2 parameterlist3]; clear parameterlist0 parameterlist1 parameterlist2 parameterlist3
+switch 1
+    case year==0
+        stateraw=states(:,3); % use the variable "states" as the voting results data
+        electionmessage=[electionmessage 'Custom data set, ' state_label];
+    case ismember(year,1898:2:2100)
+        statedata=gerrymander_readresults(year,states);
+        stateraw=statedata(:,3);
+        statename=gerrymander_statename(states); % Two-letter name of state
+        electionmessage=[electionmessage 'U.S. House election of ' num2str(year) ' in ' statename];
+    otherwise % just do Pennsylvania 2012
+        statedata=gerrymander_readresults(2012,38);
+        stateraw=statedata(:,3);
+        statename=gerrymander_statename(38);
+        warning('Year parameter didn''t parse - defaulting to U.S. House Pennsylvania 2012');
+end
+
+baselinemessage='Districts to be sampled for fantasy delegations: ';
+switch 1
+    case yearbaseline==0
+        foo=normrnd(0.5,0.15,435,1); % generate a generic random distribution
+        foo=max(foo,0);
+        nationaldata(:,3)=min(foo,1);
+        nationalraw=foo;
+        baselinemessage=[baselinemessage ' Random, partisan-symmetric districts.'];
+    case ismember(yearbaseline,[1898:2:2014])
+        baselinemessage=[baselinemessage ' U.S. House results of ' num2str(yearbaseline)]; 
+        if statebaseline(1)<1
+            nationaldata=gerrymander_readresults(yearbaseline,1:50);
+            baselinemessage=[baselinemessage ' in all 50 states'];
+        else
+            nationaldata=gerrymander_readresults(yearbaseline,statebaseline);
+            switch 1
+                case length(statebaseline)==50
+                    baselinemessage=[baselinemessage ' in all 50 states'];
+                case length(statebaseline)>=30
+                    omitstates=setdiff([1:50],statebaseline);
+                    baselinemessage=[baselinemessage ' in all states, but omitting: ' gerrymander_statename(omitstates)];
+                otherwise
+                    baselinemessage=[baselinemessage ' in: ' gerrymander_statename(statebaseline)];
+            end
+        end
+        nationalraw=nationaldata(:,3);    
+    otherwise % just do Pennsylvania 2012
+        nationaldata=gerrymander_readresults(2012,1:50);
+        baselinemessage=[baselinemessage ' U.S. House 2012'];
+        warning('Yearbaseline parameter didn''t parse - defaulting national data to 2012');
+end
+
+%
+% calculate basic parameters from the data
+%
+N_delegates=length(stateraw); 
+D_districts=find(stateraw>=0.5);
+R_districts=find(stateraw<0.5);
+N_D=length(D_districts); 
+N_R=N_delegates-N_D;
+
+anyimputed=not(and(isempty(find(stateraw==1)),isempty(find(stateraw==0))));
+imputeduncontested=min(imputeduncontested,1); imputeduncontested=max(imputeduncontested,0);
+imputedfloor=min(imputeduncontested,1-imputeduncontested);
+
+stateresults=stateraw;
+stateresults(find(stateresults==0))=imputedfloor;
+stateresults(find(stateresults==1))=1-imputedfloor;
+nationalresults=nationalraw;
+nationalresults(find(nationalresults==0))=imputedfloor;
+nationalresults(find(nationalresults==1))=1-imputedfloor;
+
+D_mean_raw=mean(stateraw);
+R_mean_raw=1-D_mean_raw;
+D_mean=mean(stateresults);
+R_mean=1-D_mean;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% Start calculating and writing output %%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+close all
+
+fid=fopen(strcat(outputfilename,'.html'),'w');
+site='http://gerrymander.princeton.edu';
+msg='<b>Gerrymandering analyzer from Prof. Sam Wang, Princeton University</b>';
+fprintf(fid,'<p><a href = "%s">%s</a></p>\n<p></p>\n<p>',site,msg);
+
+fprintf(fid,'%s</p>\n<p>',electionmessage);
+fprintf(fid,'%s</p>\n<p></p>\n<p>',baselinemessage);
+state_name=gerrymander_statename(states); % will give two-letter abbreviation of state
+
+if N_delegates<=1
+    formatSpec='Analysis is not possible. %s only has one representative listed, and single-district states cannot be redistricted.</p>\n';
+    fprintf(fid,formatSpec,state_name);
+    results=0;
+else  
+    state_name=gerrymander_statename(states); % will give two-letter abbreviation of state
+    formatSpec='The %s delegation has %d seats, %d Democratic/other and %d Republican.</p>\n<p>';
+    fprintf(fid,formatSpec,state_name,N_delegates,N_D,N_R);
+
+    if ~(imputeduncontested==0)
+        fprintf(fid,'Uncontested races are assumed to have been won with %i%% of the vote.</p>\n<p>',imputeduncontested*100);
+    end
+
+    fprintf(fid,'The average Democratic share of the two-party total vote was %2.1f%% (raw)',D_mean_raw*100);
+    if ~(D_mean_raw==D_mean)
+        fprintf(fid,', %2.1f%% with imputation of uncontested races',D_mean*100);
+    end
+    fprintf(fid,'.</p>\n<p></p>\n<p>');
+
+    fprintf(fid,'<b>Analysis of Intents</b></p>\n<p></p>\n<p>');
+
+    fprintf(fid,'If a political party wishes to create for itself an advantage, it will pack its opponents to win overwhelmingly in a small number of districts, while distributing its own votes more thinly, but still to produce reliable wins. ');
+    fprintf(fid,'</p>\n<p></p>\n<p>');
+    fprintf(fid,'Partisan gerrymandering arises not from single districts, but from patterns of outcomes. Thus a single lopsided district may not be an offense - indeed, single-district gerrymandering is permitted by Supreme Court precedent, and may be required for the construction of individual districts that comply with the Voting Rights Act. Rather, it is combinations of outcomes that confer undue advantage to one party or the other.');
+    fprintf(fid,'</p>\n<p></p>\n<p>');
+    fprintf(fid,'The following two tests provide a way of quantifying any such advantage in a set of election results.');
+    fprintf(fid,'</p>\n<p></p>\n<p>');
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%% Test for lopsided win margins %%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    fprintf('%s Test 1\n', datestr(now))
+    fprintf(fid,'<b>First Test of Intents: Probing for lopsided win margins (the two-sample t-test):</b> ');
+    fprintf(fid,'To test for a lopsided advantage, one can compare each party''s winning margins and see if they are systematically different. ');
+    fprintf(fid,'This is done using the <a href="http://vassarstats.net/textbook/ch11pt1.html">two-sample t-test</a>. ');
+    fprintf(fid,'In this test, the party with the <i>smaller</i> set of winning margins has the advantage.</p>\n<p></p>\n<p>');
+    if and(N_D>=2,N_R>=2)
+        if mean(stateresults(D_districts))>mean(1-stateresults(R_districts))
+            [h1,p1,CI1,stats1]=ttest2(stateresults(D_districts), 1-stateresults(R_districts), 'tail', 'right', 'Vartype', 'equal');
+        else
+            [h1,p1,CI1,stats1]=ttest2(stateresults(D_districts), 1-stateresults(R_districts), 'tail', 'left', 'Vartype', 'equal');
+        end
+        switch 1
+            case p1>0.05
+                fprintf(fid,'The difference between the two parties'' win margins does not meet established standards for statistical significance. ');
+                fprintf(fid,'The probability that this difference or larger could have arisen by partisan-unbiased mechanisms is %1.2f.',p1);
+            case p1<=0.05
+                fprintf(fid,'The difference between the two parties'' win margins meets established standards for statistical significance. ');
+                if p1>=0.01
+                    fprintf(fid,'The probability that this difference in win margins (or larger) would have arisen by partisan-unbiased mechanisms alone is %1.2f. ',p1);
+                else
+                    if p1>=0.001
+                        fprintf(fid,'The probability that this difference in win margins (or larger) would have arisen by partisan-unbiased mechanisms alone is %1.3f. ',p1);
+                    else
+                        fprintf(fid,'The probability that this difference in win margins (or larger) would have arisen by partisan-unbiased mechanisms alone is less than 0.001. ');
+                    end
+                end
+        end
+        fprintf(fid,'</p>\n<p></p>\n<p>');
+
+    % JPEG: make and save a scatter plot with outputfilename_Test1.jpg and outputfilename_Test1_hires.jpg 
+        Fig1 = figure(1);
+        set(Fig1, 'Position', [100 100 600 150])
+        title('Analysis of Intents: Lopsided wins by one side')
+        hold on
+
+        plot(100*stateraw(D_districts),1,'ok','MarkerFaceColor',[.65 .65 1],'LineWidth',1)
+        mean_Dshare=mean(100*stateraw(D_districts));
+        plot([mean_Dshare mean_Dshare],[0.6 1.4],'-k')
+        plot(100-100*stateraw(R_districts),2,'ok','MarkerFaceColor',[1 .3 .3],'LineWidth',1)
+        mean_Rshare=100-mean(100*stateraw(R_districts));
+        plot([mean_Rshare mean_Rshare],[1.6 2.4],'-k')
+
+        axis([48 102 .5 2.5])
+        xlabel('Winning vote percentage')
+        set(gca,'XTick',[50 60 70 80 90 100]);
+        set(gca,'YTick',[1 2]);
+        set(gca,'YTickLabel',{'Democratic','Republican'});    
+        set(gcf,'PaperPositionMode','auto')
+        print([outputfilename '_Test1_hires.jpg'],'-djpeg','-r300') % uses paper options https://www.mathworks.com/matlabcentral/answers/102382-how-do-i-specify-the-output-sizes-of-jpeg-png-and-tiff-images-when-using-the-print-function-in-mat
+        screen2jpeg([outputfilename '_Test1.jpg'])
+
+        fprintf(fid,'<IMG SRC="%s_Test1.jpg" border="0" alt="Logo"></p>\n<p>',outputfilename);
+    else
+        fprintf(fid,'Can''t compare win margins. For this test, both parties must have at least two seats.</p>\n<p></p>\n<p>');
+    end
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%% Test for asymmetric advantage %%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    fprintf('%s Test 2\n', datestr(now))
+    fprintf(fid,'<b>Second Test of Intents: Probing for asymmetric advantage for one party (mean-median difference and/or chi-square test):</b> ');
+    fprintf(fid,'The choice of test depends on whether the parties are closely matched (mean-median difference) or one party is dominant (chi-square test of variance).</p>\n<p></p>\n<p>');
+
+    partisan_balance=abs(mean(stateresults)-0.5);
+
+    if partisan_balance<0.06
+        fprintf(fid,'When the parties are closely matched in overall strength, a partisan advantage will be evident in the form of a difference between the mean (a.k.a. average) vote share and the median vote share, calculated across all districts. </p>\n<p></p>\n<p>');
+        % mean minus median test
+        mean_median_diff=mean(stateresults)-median(stateresults);
+        SK_mmdiff=mean_median_diff/std(stateresults)*sqrt(length(stateresults)/0.5708); % the 0.5708 comes from p. 352 of Cabilio and Masaro 1996
+        pvalue_mmdiff=min(normcdf(SK_mmdiff),1-normcdf(SK_mmdiff)); % One-tailed p-value, usually appropriate since most testers have a direction in mind
+
+        if mean_median_diff<0
+            fprintf(fid,'The mean-median difference is %2.1f%% in a direction of advantage to the Democratic Party. ',abs(mean_median_diff)*100);
+        else
+            if mean_median_diff>0
+                fprintf(fid,'The mean-median difference is %2.1f%% in a direction of advantage to the Republican Party. ',abs(mean_median_diff)*100);
+            else
+                fprintf(fid,'The mean and median are identical, suggesting no identifiable advantage to either major party. This can occur in situations where all races are uncontested.');
+            end
+        end
+
+        fprintf(fid,'The mean-median difference would reach this value in %2.1f%% of situations by a partisan-unbiased process. ',pvalue_mmdiff*100);
+        if pvalue_mmdiff<0.01
+            fprintf(fid,'This difference is statistically significant (p<0.01), and in a case of suspected gerrymandering is extremely unlikely to have arisen by chance. ');
+        else
+            if pvalue_mmdiff<0.05
+                fprintf(fid,'This difference is statistically significant (p<0.05), and in a case of suspected gerrymandering is unlikely to have arisen by chance. ');
+            else
+                fprintf(fid,'This difference is not statistically significant (p>0.05). ');
+            end
+        end
+        fprintf(fid,'</p>\n<p></p>\n<p>');    
+
+    % JPEG: Show data in a single plot, mean and median indicated, save as outputfilename_Test2a.jpg
+        Fig2a = figure(2);
+        set(Fig2a, 'Position', [100 400 600 150])
+        title('Analysis of Intents: Mean-median difference in vote share')
+        hold on
+
+        plot(100*stateraw(D_districts),1,'ok','MarkerFaceColor',[.65 .65 1],'LineWidth',1)
+        plot(100*stateraw(R_districts),1,'ok','MarkerFaceColor',[1 .3 .3],'LineWidth',1)
+        mean_Dshare=mean(100*stateraw(D_districts));
+        plot([mean(stateresults)*100 mean(stateresults)*100],[0.6 1.4],'-k')
+        plot([median(stateresults)*100 median(stateresults)*100],[0.8 1.2],'-r')
+        axis([-2 102 0.6 1.4])
+        % add labels for average and median
+        % would be cool to show zone of chance
+
+        xlabel('Democratic Party vote share (%)')
+        set(gca,'XTick',[0 10 20 30 40 50 60 70 80 90 100]);
+        set(gca,'YTick',[1]);
+        if year>0
+            set(gca,'YTickLabel',gerrymander_statename(states));    
+        else
+            set(gca,'YTickLabel',state_label);    
+        end
+        set(gcf,'PaperPositionMode','auto')
+        print([outputfilename '_Test2a_hires.jpg'],'-djpeg','-r300') % uses paper options https://www.mathworks.com/matlabcentral/answers/102382-how-do-i-specify-the-output-sizes-of-jpeg-png-and-tiff-images-when-using-the-print-function-in-mat
+        screen2jpeg([outputfilename '_Test2a.jpg'])
+
+        fprintf(fid,'<IMG SRC="%s_Test2a.jpg" border="0" alt="Logo"></p>\n<p></p>\n<p>',outputfilename);    
+    end
+
+    if partisan_balance>0.05
+        fprintf(fid,'When one party is dominant statewide, it gains an overall advantage by spreading its strength as uniformly as possible across districts. The statistical test to detect an abnormally uniform pattern is the <a href="http://www.itl.nist.gov/div898/handbook/eda/section3/eda358.htm">chi-square test</a>, in which the vote share of the majority party-controlled seats are compared with nationwide patterns.</p>\n<p></p>\n<p>');    
+        % chi square test on majority of delegation
+        if length(D_districts)>length(R_districts)
+            varcompare=var(nationalresults(find(nationalresults>0.5)));
+            [h2b,p2b,ci2b,stats2b] = vartest(stateresults(D_districts),varcompare,'Tail','left');
+            fprintf(fid,'The standard deviation of the Democratic majority''s winning vote share is %2.1f%%. ',std(stateresults(D_districts))*100);
+            fprintf(fid,'At a national level, the standard deviation is %2.1f%%. ',sqrt(varcompare)*100);
+        else
+            varcompare=var(nationalresults(find(nationalresults<0.5)));
+            [h2b,p2b,ci2b,stats2b] = vartest(stateresults(R_districts),varcompare,'Tail','left');
+            fprintf(fid,'The standard deviation of the Republican majority''s winning vote share is %2.1f%%. ',std(stateresults(R_districts))*100);
+            fprintf(fid,'At a national level, the standard deviation is %2.1f%%. ',sqrt(varcompare)*100);
+        end 
+        if p2b<0.01
+            fprintf(fid,'This difference is statistically significant (p<0.01), and in a case of suspected gerrymandering is extremely unlikely to have arisen by chance. ');
+        else
+            if p2b<0.05
+                fprintf(fid,'This difference is statistically significant (p<0.05), and in a case of suspected gerrymandering is unlikely to have arisen by chance. ');
+            else
+                fprintf(fid,'This difference is not statistically significant (p>0.05). ');
+            end
+        end
+        fprintf(fid,'</p>\n<p>');    
+
+    % JPEG: show barplot of all districts
+    % inset message, SD of majority district vote share, compare with national SD
+        Fig2b = figure(3);
+        set(Fig2b, 'Position', [600 100 600 300])
+        title('Analysis of Intents: Chi-square test for unusually uniform outcomes')
+        hold on
+    % plot zone of chance for majority?
+        plot([0 length(D_districts)+length(R_districts)+0.5],[50 50],'-k');
+        if length(D_districts)>0
+            bar([1:length(D_districts)],100*stateraw(D_districts),'b')
+        end
+        if length(R_districts)>0
+            bar([length(D_districts)+1:length(D_districts)+length(R_districts)],100*stateraw(R_districts),'r')
+        end
+        axis([0 length(D_districts)+length(R_districts)+0.5 -3 100]);
+        xlabel('Districts (sorted by vote share)')
+        ylabel('Democratic vote share (%)')
+        set(gca,'XTick',[]);
+        set(gca,'YTick',[0 10 20 30 40 50 60 70 80 90 100]);
+
+        set(gcf,'PaperPositionMode','auto')
+        print([outputfilename '_Test2b_hires.jpg'],'-djpeg','-r300')
+        screen2jpeg([outputfilename '_Test2b.jpg'])
+
+        fprintf(fid,'<IMG SRC="%s_Test2b.jpg" border="0" alt="Logo"></p>\n<p></p>\n',outputfilename);    
+    end
+    results=1;
+end
+
+    fclose(fid);
+
+end
